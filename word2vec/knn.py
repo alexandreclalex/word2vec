@@ -6,10 +6,6 @@ from scipy import spatial
 from scipy import stats
 
 class KNN:
-"""
-Implementation of the k-nearest neighbors algorithm for classification.
-"""
-
     def __init__(self, k):
         """
         Takes one parameter. k is the number of nearest neighbors to use
