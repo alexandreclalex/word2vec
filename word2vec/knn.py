@@ -53,4 +53,4 @@ class KNN:
         # input matrix containing the indices of the top <k> values per row.
         # these values in order to determine the most common value for the to
         # the resulting array is flattened to produce a one dimensional outpu
-        return stats.mode([np.take(self.reference_values, x) for x in knn_indexes])
+        return np.array([stats.mode(np.take(self.reference_values, x))[0] for x in knn_indexes])
