@@ -7,17 +7,28 @@ from scipy import stats
 
 class KNN:
     def __init__(self, k):
-        """
+        '''
         Takes one parameter. k is the number of nearest neighbors to use
         to predict the output variable's value for a query point.
-        """
+        '''
         self.k = k
 
     def fit(self, X, y):
+        '''
+        Fit the KNN to a set of reference points
+
+        @param X: The vectors in the embedding space
+        @param y: The labels
+        '''
         self.reference_points = X
         self.reference_values = y
 
     def predict_loop(self, X):
+        '''
+        Predict class based on the nearest neighbors using pure python looping
+
+        @param X: The vectors in embedding space
+        '''
         # 1d list of predictions. Each prediction in the list
         # corresponds to the value of the input array at the same index.
         predictions = []
@@ -37,6 +48,11 @@ class KNN:
         return np.array(predictions)
 
     def predict_numpy(self, X):
+        '''
+        Predict the labels based on nearest neighbors using fast numpy implementation
+
+        @param X: The vectors in embedding space
+        '''
         # This line creates a distance matrix. The matrix contains a row for
         # and contains a column for every reference point. The values of this
         # from the input point of the row to every reference point. The input

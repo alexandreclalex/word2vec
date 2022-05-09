@@ -18,9 +18,19 @@ class DataLoader(tf.keras.utils.Sequence):
 
 
     def __len__(self):
+        '''
+        Allows the class to work with len(). Returns the number of batches
+        '''
         return len(self.tokens)//self.batch_size
 
     def __getitem__(self, batch_index):
+        '''
+        Allows the class to work with [] indexing.
+        Returns a batch of input and output data with both positive
+        and negative pair examples for training
+
+        @param batch_index: Integer, the batch to fetch
+        '''
         batch_indices = self.indices[batch_index * self.batch_size:(batch_index + 1) * self.batch_size]
         selected_tokens = self.tokens[batch_indices]
         selected_tokens = np.pad(selected_tokens, [(0,0), (0, 1)])
@@ -41,16 +51,27 @@ class DataLoader(tf.keras.utils.Sequence):
         return [source_final, targets_final], labels
 
     def on_epoch_end(self):
+        '''
+        Called after every epoch. Shuffles the order the data is fetched
+        '''
         np.random.shuffle(self.indices)
 
 
 class Word2VecModel():
+
     def __init__(self, projection_dim=128):
         self.word_ids = {}
         self.precomputed = None
         self.projection_dim = projection_dim
 
+
     def _pad(self, tokens, length=10):
+        '''
+        Forces a ragged 2d list of tokens to be the same length through slicing and padding
+
+        @param tokens: The tokens to process
+        @param length: The desired output length for each row in tokens
+        '''
         result = []
         for i in range(len(tokens)):
             row = ['pad'] * 10
@@ -60,7 +81,13 @@ class Word2VecModel():
 
         return np.array(result)
 
+
     def predict(self, word):
+        '''
+        Return the word vector for a given word. If the word was not in the training set, return zero vector
+
+        @param word: The word to process
+        '''
 
         if self.precomputed is None:
             keys = [x for x in self.word_ids.keys()]
@@ -71,15 +98,27 @@ class Word2VecModel():
         else:
             return np.zeros(self.projection_dim)
 
+
     def save(self, path):
+        '''
+        Save the current state of the model inculding important configs so that the model may
+        be loaded later
+
+        @param path: The path for the save dir
+        '''
         self.model.save(path)
         with open(os.path.join(path, "ids.json"), "w+") as f:
             json.dump(self.word_ids, f)
         with open(os.path.join(path, "other_configs.json"), "w+") as f:
             json.dump({"projection_dim": self.projection_dim}, f)
-        
-    
+
+
     def load(self, path):
+        '''
+        Load a model saved with save()
+
+        @param path: The path for the model to load 
+        '''
         self.model = tf.keras.models.load_model(path)
         with open(os.path.join(path, "ids.json"), "r") as f:
             ids = json.load(f)
@@ -90,10 +129,13 @@ class Word2VecModel():
         self.word_ids = ids
 
 
-
     def fit(self, tokens, epochs=32, batch_size=1024):
         '''
+        Fit a custom word2vec model to a given dataset
+
         @param tokens: A 2d array. Each row contains a set of words from an input description
+        @param epochs: Number of training epochs
+        @param batch_size: Training batch size
         '''
 
         tokens = self._pad(tokens)
