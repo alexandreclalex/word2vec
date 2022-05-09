@@ -8,14 +8,16 @@ class Classifier:
     def __init__(self, word2vec_weights):
         self.knn = KNN(5)
         #self.word2vec = Word2Vec.load(word2vec_weights)
-        self.word2vec = Word2VecModel.load(word2vec_weights)
+        self.word2vec = Word2VecModel()
+        self.word2vec.load(word2vec_weights)
 
     def _get_average_word_embeddings(self, title):
-        word_embeddings = [self.word2vec.wv[x] for x in title.split() if x in self.word2vec.wv]
+        word_embeddings = [self.word2vec.predict(x) for x in title.split()]
         if len(word_embeddings) == 0:
-            word_embeddings = np.zeros((1, 100))
+            word_embeddings = np.zeros((1, self.word2vec.projection_dim))
         word_embeddings = np.array(word_embeddings)
-        return np.mean(word_embeddings, axis=-2)
+        me = np.mean(word_embeddings, axis=0).flatten()
+        return me
     
     def fit(self, X, y):
         training_vectors = [self._get_average_word_embeddings(x) for x in X]

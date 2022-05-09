@@ -1,8 +1,11 @@
 from tensorflow.keras import backend
 from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-import numpy as np
 import tensorflow as tf
+import numpy as np
+import json
+import os
+
 class DataLoader(tf.keras.utils.Sequence):
 
     """Lazy loading word positive and negative pairs"""
@@ -44,6 +47,7 @@ class DataLoader(tf.keras.utils.Sequence):
 class Word2VecModel():
     def __init__(self, projection_dim=128):
         self.word_ids = {}
+        self.precomputed = None
         self.projection_dim = projection_dim
 
     def _pad(self, tokens, length=10):
@@ -57,16 +61,33 @@ class Word2VecModel():
         return np.array(result)
 
     def predict(self, word):
-        if word in self.word_ids:
-            return self.model.predict([self.word_ids[word]])
+
+        if self.precomputed is None:
+            keys = [x for x in self.word_ids.keys()]
+            predictions = self.model.predict([self.word_ids[x] for x in keys])
+            self.precomputed = {keys[i]:predictions[i] for i in range(len(keys))}
+        if word in self.precomputed:
+            return self.precomputed[word]
         else:
-            return np.zeros(projection_dim)
+            return np.zeros(self.projection_dim)
 
     def save(self, path):
         self.model.save(path)
+        with open(os.path.join(path, "ids.json"), "w+") as f:
+            json.dump(self.word_ids, f)
+        with open(os.path.join(path, "other_configs.json"), "w+") as f:
+            json.dump({"projection_dim": self.projection_dim}, f)
+        
     
     def load(self, path):
-        self.model = tf.keras.load_model(path)
+        self.model = tf.keras.models.load_model(path)
+        with open(os.path.join(path, "ids.json"), "r") as f:
+            ids = json.load(f)
+        with open(os.path.join(path, "other_configs.json"), "r") as f:
+            self.projection_dim = int(json.load(f)["projection_dim"])
+        for key in ids.keys():
+            ids[key] = int(ids[key])
+        self.word_ids = ids
 
 
 
