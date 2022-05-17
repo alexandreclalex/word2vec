@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from classifier import Classifier
 
-c = Classifier("trained_word2vec")
+c = Classifier("custom_word_2_vec")
 
 # Load Data
 df_train = pd.read_csv("train.csv")

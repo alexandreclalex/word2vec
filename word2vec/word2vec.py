@@ -3,6 +3,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Model
 import tensorflow as tf
 import numpy as np
+import random
 import json
 import os
 
@@ -38,11 +39,16 @@ class DataLoader(tf.keras.utils.Sequence):
         # Label selections
         labels = np.ones((self.batch_size, 1), dtype=np.int32)#np.random.randint(2, size=self.batch_size)
 
+        def get_window_index(x, first_zero):
+            add_subtract = random.randint(0, 1)
+            num = random.randint(1, 3)
+            selected = x - num if (add_subtract == 0) else x + num
+            return min(max(0, selected), first_zero - 1)
         # Ensure we do not take any padding characters
         first_zeros = (selected_tokens==0).astype(int).argmax(axis=-1).reshape((self.batch_size, 1))
         source_indices = (np.random.random((self.batch_size, 1)) * first_zeros.reshape((self.batch_size, 1))).astype(int).reshape((self.batch_size, 1))
-        source_final = np.array([selected_tokens[x[0] , x[1] - 1] for x in np.concatenate((np.arange(self.batch_size).reshape((self.batch_size, 1)), source_indices), axis=-1)]).reshape((self.batch_size, 1))
-        targets_final =  np.array([selected_tokens[x[0], x[1]] for x in np.concatenate((np.arange(self.batch_size).reshape((self.batch_size, 1)), source_indices), axis=-1)]).reshape((self.batch_size, 1))
+        source_final = np.array([selected_tokens[x[0] , x[1]] for x in np.concatenate((np.arange(self.batch_size).reshape((self.batch_size, 1)), source_indices), axis=-1)]).reshape((self.batch_size, 1))
+        targets_final =  np.array([selected_tokens[x[0], get_window_index(x[1], first_zeros[i, 0])] for x, i in zip(np.concatenate((np.arange(self.batch_size).reshape((self.batch_size, 1)), source_indices), axis=-1), list(range(self.batch_size)))]).reshape((self.batch_size, 1))
 
         random_words = np.random.randint(len(self.word_ids) - 1, size=self.batch_size//2) + 1
         labels[:self.batch_size//2, 0] = 0
@@ -88,7 +94,6 @@ class Word2VecModel():
 
         @param word: The word to process
         '''
-
         if self.precomputed is None:
             keys = [x for x in self.word_ids.keys()]
             predictions = self.model.predict([self.word_ids[x] for x in keys])
